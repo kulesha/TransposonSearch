@@ -11,11 +11,11 @@ Max distance : <input type="text" name="mind" value="1000"/> <br/>
 <input type="submit" name="search" value="Find"/>
 </form>
 <?php
-if (array_key_exists("search", $_GET)) {
+if (array_key_exists("search", $_POST)) {
    echo "<h3> Performing search ... </h3>";
 }
 
-echo "Distance : ", $_GET["mind"], "<br/>";
+echo "Distance : ", $_POST["mind"], "<br/>";
 
 ?>
 
