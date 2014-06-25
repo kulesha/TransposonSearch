@@ -34,8 +34,7 @@ class TransposonSearch {
 
 	    usort($this->reads, 
 	     	function($a, $b) {
-	     	  #return (strcmp($a["g"], $b["g"]) * 100 + strcmp($a["chr"], $b["chr"]) * 10 + ($a["s"] > $b["s"]));
-	     	  return (strcmp($a["chr"], $b["chr"]) * 10 + ($a["s"] > $b["s"]));
+	     	  return (strcmp($a["chr_id"], $b["chr_id"]) * 10 + ($a["s"] > $b["s"]));
 		}
 	    );
 
@@ -57,7 +56,8 @@ class TransposonSearch {
 
       	$entry = array(
 	    	"read" => $data[0],
-	     	"chr" => $data[1],
+	    	"chr" => $data[1],
+	     	"chr_id" => is_numeric($data[1]) ? sprintf("%08d", $data[1]) : $data[1],
 		    "s" => $data[2],
 		    "e" => $data[3],
 		    "l" => $data[4],
