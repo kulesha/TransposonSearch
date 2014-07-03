@@ -4,13 +4,20 @@ class TransposonSearch {
 	public $reads;
     public $results;
     public $MAX_DISTANCE;
-
+	public $format;
+	
     public function __construct($opts) {
     	$this->reads = array();
       	$this->results = array();
 	    $this->MAX_DISTANCE = 100000;
+	    $this->format = array(0, 1, 2, 3, 6);
+	    
 	    if ( array_key_exists("max_distance", $opts)) {
 	       $this->MAX_DISTANCE = $opts["max_distance"];
+	    }
+	    
+	    if ( array_key_exists("format", $opts)) {
+	       $this->format = explode(',', $opts["format"]);
 	    }
     }
 
@@ -45,26 +52,28 @@ class TransposonSearch {
 	}
 
     public function addRead( $data ) {
+    	foreach ($data as $k => &$d) {
+    		if ($d === '-') {
+	     	# indicates no corresponding gene is found 
+	      		$data[$k] = '';
+	    	}
+	    }
+    		
     	if (sizeof($data) < 7) {
 	      return 0;
 	    }
-
-	    if ($data[6] === '-') {
-	     	# indicates no corresponding gene is found 
-	      $data[6] = '';
-	    }
-
+	    
       	$entry = array(
-	    	"read" => $data[0],
-	    	"chr" => $data[1],
-	     	"chr_id" => is_numeric($data[1]) ? sprintf("%08d", $data[1]) : $data[1],
-		    "s" => $data[2],
-		    "e" => $data[3],
-		    "l" => $data[4],
-		    "r" => $data[5],
-		    "g" => $data[6]
+	    	"read" => $data[$this->format[0]],
+	    	"chr" => $data[$this->format[1]],
+	     	"s" => $data[$this->format[2]],
+		    "e" => $data[$this->format[3]],
+		    "g" => $data[$this->format[4]]		   	
 	    );
-	  
+
+	    $entry["chr_id"] = is_numeric($entry["chr"]) ? sprintf("%08d", $entry["chr"]) : $entry["chr"];
+	    $entry["org"] = $data;
+	    
 	    array_push($this->reads, $entry);
 	    return 1;
 	}
@@ -81,6 +90,7 @@ class TransposonSearch {
 	  	  	reset($e["reads"]);
 	    	if ($this->closeEnough($le, $r)) {
 	      	  array_push($e["reads"], $r);
+#	      	  echo "Add to ",$e["label"], "<br/>";
               $new_group = 0;
               break;
 	    	}
@@ -89,9 +99,11 @@ class TransposonSearch {
           # if we the read is not close to any of the existing groups create a new group
 	  	  if ($new_group) {
 	    	$label = $r["g"] ? $r["g"] :  sprintf("%s:%d-%d", $r["chr"], $r["s"], $r["e"]);
+	    	
 	    	if (! array_key_exists($label, $results)) {
 	      	  $results[$label] = array();
 	          $results[$label]["reads"] = array();
+#	          $results[$label]["label"] = $label;
 	    	}
 	    	array_push($results[$label]["reads"], $r);
 	  	  }
@@ -110,7 +122,7 @@ class TransposonSearch {
 	}
 
     public function closeEnough($a, $b) {
-    	if ( $a["chr"] === $b["chr"]) {
+    	if ( !strcmp($a["chr"], $b["chr"])) {
     	  $sa = $a["s"];
     	  $ea = $a["e"];
     	  if ($sa > $ea) {
@@ -128,9 +140,14 @@ class TransposonSearch {
     	  $ca = $sa + ($ea - $sa) / 2;
     	  $cb = $sb + ($eb - $sb) / 2;
     	  if (abs($ca - $cb) < $this->MAX_DISTANCE) {
+ #   echo sprintf ("%s:%d-%d * %s:%d-%d = ", $a["chr"], $a["s"], $a["e"], $b["chr"], $b["s"], $b["e"]);
+    
+  #  	  echo " 1 <br/>";
+    
             return 1;
     	  }
   		}
+  		#echo " 0 <br/>";
   		return 0;
 	}
       
@@ -165,7 +182,8 @@ class TransposonSearch {
 	    		$c++;
 	  		}
           	foreach ($d["reads"] as &$p) {
-	    		echo '<tr class="'.$eclass.'"><td>', join ('</td><td>', array($p["read"], $p["chr"], $p["s"], $p["e"], $p["r"], $p["l"], $p["g"])), '</td></tr>';
+#	    		echo '<tr class="'.$eclass.'"><td>', join ('</td><td>', array($p["read"], $p["chr"], $p["s"], $p["e"], $p["r"], $p["l"], $p["g"],$p["g1"], $p["g2"])), '</td></tr>';
+	    		echo '<tr class="'.$eclass.'"><td>', join ('</td><td>', $p["org"]), '</td></tr>';
 	  		}
 	  		echo '<tr><td colspan=10>&nbsp;</td></tr>';
 	  		

@@ -6,10 +6,16 @@
 <h2>Transposon search</h2>
 
 <form method="post" action="#" enctype="multipart/form-data">
-Choose a file in CSV format: <input type="file" name="src_file" /> <br/>
+Choose a file in CSV format: <input type="file" name="src_file" /> or 
 <!--Enter URL : <input type="text" name="src_url" value="https://s3-eu-west-1.amazonaws.com/ek-bucket-test/traspozon.csv"/> <br/>
 -->
 Enter URL : <input type="text" name="src_url" value="http://localhost:8092/test/sample.csv"/> <br/>
+
+Select the data format: <select name="format">
+<option value="0,1,2,3,6">First (Chr - Field 1 , Gene - Field 6)</option>
+<option value="0,2,3,4,7">Second (Chr - Field 2 , Gene - Field 7)</option>
+</select>
+<br/>
 
 <?php
 $md = 1000;
@@ -30,6 +36,7 @@ if (array_key_exists("search", $_POST)) {
    include_once("lib/TransposonSearch.php");
    $opts = array();
    $opts["max_distance"] = $_POST["distance"];
+   $opts["format"] = $_POST["format"];
    $ts = new TransposonSearch($opts);
    $total = 0;
    
