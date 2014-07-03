@@ -12,8 +12,8 @@ Choose a file in CSV format: <input type="file" name="src_file" /> or
 Enter URL : <input type="text" name="src_url" value="http://localhost:8092/test/sample.csv"/> <br/>
 
 Select the data format: <select name="format">
-<option value="0,1,2,3,6">First (Chr - Field 1 , Gene - Field 6)</option>
-<option value="0,2,3,4,7">Second (Chr - Field 2 , Gene - Field 7)</option>
+<option value="0,1,2,3">First (Chr in second column)</option>
+<option value="0,2,3,4">Second (Chr in third column)</option>
 </select>
 <br/>
 

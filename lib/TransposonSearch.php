@@ -10,7 +10,7 @@ class TransposonSearch {
     	$this->reads = array();
       	$this->results = array();
 	    $this->MAX_DISTANCE = 100000;
-	    $this->format = array(0, 1, 2, 3, 6);
+	    $this->format = array(0, 1, 2, 3);
 	    
 	    if ( array_key_exists("max_distance", $opts)) {
 	       $this->MAX_DISTANCE = $opts["max_distance"];
@@ -52,13 +52,6 @@ class TransposonSearch {
 	}
 
     public function addRead( $data ) {
-    	foreach ($data as $k => &$d) {
-    		if ($d === '-') {
-	     	# indicates no corresponding gene is found 
-	      		$data[$k] = '';
-	    	}
-	    }
-    		
     	if (sizeof($data) < 7) {
 	      return 0;
 	    }
@@ -67,8 +60,7 @@ class TransposonSearch {
 	    	"read" => $data[$this->format[0]],
 	    	"chr" => $data[$this->format[1]],
 	     	"s" => $data[$this->format[2]],
-		    "e" => $data[$this->format[3]],
-		    "g" => $data[$this->format[4]]		   	
+		    "e" => $data[$this->format[3]]
 	    );
 
 	    $entry["chr_id"] = is_numeric($entry["chr"]) ? sprintf("%08d", $entry["chr"]) : $entry["chr"];
@@ -98,7 +90,8 @@ class TransposonSearch {
           
           # if we the read is not close to any of the existing groups create a new group
 	  	  if ($new_group) {
-	    	$label = $r["g"] ? $r["g"] :  sprintf("%s:%d-%d", $r["chr"], $r["s"], $r["e"]);
+#	    	$label = $r["g"] ? $r["g"] :  sprintf("%s:%d-%d", $r["chr"], $r["s"], $r["e"]);
+	    	$label = sprintf("%s:%d-%d", $r["chr"], $r["s"], $r["e"]);
 	    	
 	    	if (! array_key_exists($label, $results)) {
 	      	  $results[$label] = array();
@@ -125,29 +118,17 @@ class TransposonSearch {
     	if ( !strcmp($a["chr"], $b["chr"])) {
     	  $sa = $a["s"];
     	  $ea = $a["e"];
-    	  if ($sa > $ea) {
-       	    $sa = $ea;
-       	    $ea = $a["s"];
-    	  }
-
+    	  
     	  $sb = $b["s"];
     	  $eb = $b["e"];
-    	  if ($sb > $eb) {
-       	    $sb = $eb;
-       	    $eb = $b["s"];
-    	  }
-	    
-    	  $ca = $sa + ($ea - $sa) / 2;
-    	  $cb = $sb + ($eb - $sb) / 2;
+    	  
+    	  $ca = ( $sa + $ea ) / 2;
+    	  $cb = ( $sb + $eb ) / 2;
+    	  
     	  if (abs($ca - $cb) < $this->MAX_DISTANCE) {
- #   echo sprintf ("%s:%d-%d * %s:%d-%d = ", $a["chr"], $a["s"], $a["e"], $b["chr"], $b["s"], $b["e"]);
-    
-  #  	  echo " 1 <br/>";
-    
             return 1;
     	  }
   		}
-  		#echo " 0 <br/>";
   		return 0;
 	}
       
