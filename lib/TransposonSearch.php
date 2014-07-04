@@ -5,10 +5,12 @@ class TransposonSearch {
     public $results;
     public $MAX_DISTANCE;
 	public $format;
+	public $header;
 	
     public function __construct($opts) {
     	$this->reads = array();
       	$this->results = array();
+      	$this->header = array();
 	    $this->MAX_DISTANCE = 100000;
 	    $this->format = array(0, 1, 2, 3);
 	    
@@ -19,14 +21,14 @@ class TransposonSearch {
 	    if ( array_key_exists("format", $opts)) {
 	       $this->format = explode(',', $opts["format"]);
 	    }
-    }
+	}
 
 	public function parseCSV( $fh ) {
     	$lc = 0;
 	    $ok = 0;
       	while (!feof($fh)) {
 	      $line = fgets($fh);
-		  if (strlen($line) < 10) {
+	      if (strlen($line) < 10) {
 		  	continue;
 		  }
 
@@ -34,7 +36,7 @@ class TransposonSearch {
 		  if ($this->addRead($data)) {
 		  	$ok++;
 		  } else {
-		  	echo "Invalid number of fields at line $lc";
+		  	array_push($this->header,$data);
 		  }
 		  $lc++;
 	    }
@@ -45,24 +47,24 @@ class TransposonSearch {
 		}
 	    );
 
-	    if ($ok < $lc) {
-	      echo $lc - $ok , " invalid entries\n";
-	    }
+#	    if ($ok < $lc) {
+#	      echo $lc - $ok , " invalid entries\n";
+#	    }
 	    return $ok;
 	}
-
-    public function addRead( $data ) {
-    	if (sizeof($data) < 7) {
-	      return 0;
-	    }
-	    
-      	$entry = array(
+	public function addRead( $data ) {
+    	$entry = array(
 	    	"read" => $data[$this->format[0]],
 	    	"chr" => $data[$this->format[1]],
 	     	"s" => $data[$this->format[2]],
 		    "e" => $data[$this->format[3]]
 	    );
 
+        if (!preg_match('/^[0-9XY]+$/', $entry["chr"]) || !ctype_digit($entry["s"]) || !ctype_digit($entry["e"])) {
+#        	echo "<br/>Invalid data : ", join(' * ', $data);
+        	return 0;
+        }
+        
 	    $entry["chr_id"] = is_numeric($entry["chr"]) ? sprintf("%08d", $entry["chr"]) : $entry["chr"];
 	    $entry["org"] = $data;
 	    
@@ -152,6 +154,10 @@ class TransposonSearch {
 <table style="font-size:80%">
 	';
 
+	    foreach ($this->header as &$line ) {
+	    	    		echo '<tr><th>', join ('</th><th>', $line), '</th></tr>';	  	
+	    }
+	    
         foreach ($this->results as $gr => $d ) {
 	  		$reads = array();
           	foreach ($d["reads"] as &$r) {
