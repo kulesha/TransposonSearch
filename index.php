@@ -116,16 +116,15 @@ if (array_key_exists("search", $_POST)) {
    	}
    
    if ($total) {     
-   	$gr_num = $ts->analizeReads();		 
+   	$gr_num = $ts->analizeReads();
+   	$ts->printStatsAsHTML();		 
    	$diffs = $ts->printResultsAsHTML();
-   	$distance = $ts->MAX_DISTANCE;   	
-	 
-     echo "<hr/>Total reads: $total<br/>Max distance: $distance<br/>Close groups: $gr_num<br/>Different reads: $diffs";
+   	$distance = $ts->MAX_DISTANCE;   	     
    } else {
      echo "<br/><b> Could not find valid data .. Please check the file format ... </b><br>";
    }
 	
-#   echo "TS : ", var_dump($ts), "<br/>";
+   #echo "TS : ", var_dump($ts->stats), "<br/>";
 }
 
 

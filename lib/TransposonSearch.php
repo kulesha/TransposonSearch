@@ -6,14 +6,19 @@ class TransposonSearch {
     public $MAX_DISTANCE;
 	public $format;
 	public $header;
-	
+	public $stats;
+		
     public function __construct($opts) {
     	$this->reads = array();
       	$this->results = array();
       	$this->header = array();
 	    $this->MAX_DISTANCE = 100000;
 	    $this->format = array(0, 1, 2, 3);
-	    
+		$this->stats["total"] = array();
+		$this->stats["close"] = array();
+		$this->stats["tcount"] = 0;
+		$this->stats["ccount"] = 0;
+		    
 	    if ( array_key_exists("max_distance", $opts)) {
 	       $this->MAX_DISTANCE = $opts["max_distance"];
 	    }
@@ -34,7 +39,7 @@ class TransposonSearch {
 
 		  $data = explode(',', $line);
 		  if ($this->addRead($data)) {
-		  	$ok++;
+		  	$ok++;		  	
 		  } else {
 		  	array_push($this->header,$data);
 		  }
@@ -65,9 +70,15 @@ class TransposonSearch {
         	return 0;
         }
         
+        if (array_key_exists($entry["chr"], $this->stats["total"])) {
+        	$this->stats["total"][$entry["chr"]]++;
+        } else {
+        	$this->stats["total"][$entry["chr"]] = 1;
+        }
+        
 	    $entry["chr_id"] = is_numeric($entry["chr"]) ? sprintf("%08d", $entry["chr"]) : $entry["chr"];
 	    $entry["org"] = $data;
-	    
+	    	    
 	    array_push($this->reads, $entry);
 	    return 1;
 	}
@@ -84,6 +95,8 @@ class TransposonSearch {
 	  	  	reset($e["reads"]);
 	    	if ($this->closeEnough($le, $r)) {
 	      	  array_push($e["reads"], $r);
+	      	  	      	  
+	      	  
 #	      	  echo "Add to ",$e["label"], "<br/>";
               $new_group = 0;
               break;
@@ -98,6 +111,7 @@ class TransposonSearch {
 	    	if (! array_key_exists($label, $results)) {
 	      	  $results[$label] = array();
 	          $results[$label]["reads"] = array();
+	          $results[$label]["chr"] = $r["chr"];
 #	          $results[$label]["label"] = $label;
 	    	}
 	    	array_push($results[$label]["reads"], $r);
@@ -112,6 +126,13 @@ class TransposonSearch {
 	    	return 0;
 		});
 		
+		foreach ($this->results as $grp) {
+			if (array_key_exists($grp["chr"], $this->stats["close"])) {
+        		$this->stats["close"][$grp["chr"]]++;
+        	} else {
+        		$this->stats["close"][$grp["chr"]] = 1;
+        	}        
+		}
 		
         return sizeof($this->results);
 	}
@@ -182,6 +203,66 @@ class TransposonSearch {
 ';
 		return $c;
 	}
+	
+	public function printStatsAsHTML() {
+	    echo "<table>";
+	    echo "<tr><th>Max distance</th><td>", $this->MAX_DISTANCE, "</td></tr>";
+	    echo "<tr><th>Total entries</th><td>", sizeof($this->reads), "</td></tr>";
+	    echo "<tr><th>Close entries</th><td>", sizeof($this->results), "</td></tr>";
+	    echo "</table>";
+if (0) {	    
+	    echo "<table>";
+	    foreach ($this->stats["total"] as $chr => $num) {
+	    	$ccount = array_key_exists($chr, $this->stats["close"]) ? $this->stats["close"][$chr] : 0;
+	    	echo "<tr><td>$chr</td><td>$num</td><td>$ccount</td></tr>";
+	    }
+	    echo "</table>";
+}
+
+echo '<h3>Distribution of reads by chromosomes</h3> 	    
+	    <div id="chartContainer">
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://dimplejs.org/dist/dimple.v2.0.0.min.js"></script>
+  <script type="text/javascript">
+    var svg = dimple.newSvg("#chartContainer", 800, 400);
+    var data = [ ';
+    
+    foreach ($this->stats["total"] as $chr => $num) {
+      $ccount = array_key_exists($chr, $this->stats["close"]) ? $this->stats["close"][$chr] : 0;
+	    	
+	  echo sprintf("{'Chromosome' : '%s', 'Total' : %d, 'Close' : %d },", $chr, $num, $ccount);
+	}    
+	  #echo sprintf("{'Chromosome' : '%s', 'Total' : %d, 'Close' : %d}", " ", 0 , 0);
+	#  echo "{ }";
+	  
+    echo '
+    ];
+     
+    var chart = new dimple.chart(svg, data);
+//	chart.defaultColors = [
+ //new dimple.color("#FF0000", "Blue"), // Set a red fill with a blue stroke
+ //new dimple.color("#00FF00"), // Set a green fill with a darker green stroke
+ //new dimple.color("rgb(0, 0, 255)") // Set a blue fill with a darker blue stroke
+ //]; 
+	
+	x = chart.addCategoryAxis("x", "Chromosome");
+	y = chart.addMeasureAxis("y", "Total");
+	y2= chart.addMeasureAxis("y", "Close");
+	
+	var maxT = Math.max.apply(Math, data.map(function(o){return o.Total;}))
+	
+    y2.overrideMax = maxT / 2;
+	x.addOrderRule("Chromosome");
+   chart.addSeries("Total", dimple.plot.bubble, [x,y]);
+   chart.addSeries("Close", dimple.plot.bar, [x,y2]);
+   //chart.addLegend(530, 100, 60, 300, "Right");
+	chart.draw();
+
+  </script>
+</div>
+';
+	}
+	
 
 }
 
